@@ -5,10 +5,6 @@ avocop <- create_df_all(drug_name_1 = 'Avonex', drug_name_2 = 'Copaxone')
 avocop <- droplevels(avocop) # Since this is a subset of the original full dataset !
 write.csv(x = avocop, file = 'Avo_Cop.csv', row.names = F)
 
-# Looking for NAs
-(sum(complete.cases(avocop))/dim(avocop)[[1]])*100
-colMeans(is.na(avocop))[colMeans(is.na(avocop)) > 0]
-
 # Calculations based on Flags !
 # bene_count_ge65_suppress_flag
 find_desc(att_name = 'bene_count_ge65_suppress_flag', match = 1)
@@ -109,14 +105,36 @@ avocop$top4_drug_prescribed[is.na(avocop$top4_drug_prescribed)] <- 'Not_Applicab
 avocop$top5_drug_prescribed[is.na(avocop$top5_drug_prescribed)] <- 'Not_Applicable'
 
 # Cleaning up top_drug_cost_prescribed
-avocop$top3_drug_cost_prescribed[is.na(avocop$top3_drug_cost_prescribed)] <- 'Not_Applicable'
-avocop$top4_drug_cost_prescribed[is.na(avocop$top4_drug_cost_prescribed)] <- 'Not_Applicable'
-avocop$top5_drug_cost_prescribed[is.na(avocop$top5_drug_cost_prescribed)] <- 'Not_Applicable'
+avocop$top3_drug_cost_prescribed[is.na(avocop$top3_drug_cost_prescribed)] <- 0
+avocop$top4_drug_cost_prescribed[is.na(avocop$top4_drug_cost_prescribed)] <- 0
+avocop$top5_drug_cost_prescribed[is.na(avocop$top5_drug_cost_prescribed)] <- 0
 
-# Looking for NAs
+# Looking for NAs # Revisit for imputing missing values !
 (sum(complete.cases(avocop))/dim(avocop)[[1]])*100
 sum(complete.cases(avocop))
 sort(colMeans(is.na(avocop))[colMeans(is.na(avocop)) > 0], decreasing = T)
 sort(table(colMeans(is.na(avocop))), decreasing = T) # other_drug_cost, odd one out ! Others are multiple of 2
 find_desc(att_name = 'other_drug_cost', match = 1)
 all_names[which(all_names %like% 'cost_percentage')] # other_drug_cost_percentage not given !
+
+# Cleaning up empty strings !
+avocop_flags <- avocop[,which(colnames(avocop) %like% 'flag')]
+str(avocop_flags)
+sum(avocop_flags == '') == sum(avocop == '', na.rm = T) # Successfull ! # Empty Strings exist only in the flags, not in any other attribute !
+avocop[avocop == ''] <- 'Not_Suppressed'
+
+
+# Visulaising missing values - ggplot
+require(ggplot2)
+require(reshape)
+head(avocop %>% is.na %>% melt)
+ggplot_missing <- function(x){
+                    x %>% is.na %>% melt %>%
+                      ggplot(data = ., aes(x = X1, y = X2)) +
+                      geom_raster(aes(fill = value)) +
+                      scale_fill_grey(name = "", labels = c("Present","Missing")) +
+                      labs(y = "Variables in Dataset", x = "Rows / observations")
+                  }
+ggplot_missing(avocop)
+
+#write.csv(x = avocop, file = 'Avo_Cop_partial_tidy.csv', row.names = F)

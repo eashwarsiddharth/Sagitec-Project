@@ -138,3 +138,13 @@ ggplot_missing <- function(x){
 ggplot_missing(avocop)
 
 #write.csv(x = avocop, file = 'Avo_Cop_partial_tidy.csv', row.names = F)
+
+# Missing values in each category
+avocop_Y_split <- avocop %>% split(f = as.factor(.$y_drug_name))
+lapply(X = avocop_Y_split, FUN = is.na) %>% lapply(FUN = table)
+lapply(X = avocop_Y_split, FUN = complete.cases) %>% lapply(FUN = sum)
+
+# Consider only complete cases
+avocop_cc <- avocop[complete.cases(avocop),]
+str(avocop_cc)
+write.csv(x = avocop_cc, file = 'Avo_Cop_tidy_complete_cases.csv', row.names = F)

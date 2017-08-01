@@ -42,8 +42,8 @@ caret_c50_1 <- train(x = avocop_train_1[,-69], y = avocop_train_1[,69], method =
                     trControl = control, tuneGrid = gridSearch, metric = "Accuracy")
 summary(caret_c50_1)
 caret_c50_1_final_model_1 <- caret_c50_1$finalModel
-# trials model winnow
-# tree   FALSE    80     0.9480972  0.9150182
+# model winnow trials Accuracy   Kappa
+# tree   FALSE    80  0.9480972  0.9150182
 # Plot grid
 plot(caret_c50_1, metric = 'Accuracy')
 # Variable Importance
@@ -52,12 +52,19 @@ var_imp_caret_c50_1_1$variable_name <- rownames(var_imp_caret_c50_1_1)
 var_imp_caret_c50_1_1 <- arrange(var_imp_caret_c50_1_1, Overall)
 var_imp_caret_c50_1_1$variable_name <- factor(var_imp_caret_c50_1_1$variable_name, levels = var_imp_caret_c50_1_1$variable_name)
 levels(var_imp_caret_c50_1_1$variable_name)
-ggplot(data = var_imp_caret_c50_1_1, aes(x = variable_name, y = Overall)) +
-  geom_bar(stat = 'identity') + coord_flip()
+custom_features <- c("top_hcpcs_code_1" , "top_hcpcs_code_2", "top_hcpcs_code_3",
+                     "top_hcpcs_code_received_per_submitted_charge_1", "top_hcpcs_code_received_per_submitted_charge_2",
+                     "top_hcpcs_code_received_per_submitted_charge_3", "mean_received_per_submitted_charge" ,
+                     "generic_usage_score_top_1", "generic_usage_score_top_2", "generic_usage_score_top_3",
+                     "generic_usage_score_top_4", "generic_usage_score_top_5", "generic_usage_total_score_top",
+                     "switch_likelihood", "mean_cost_per_day_per_claim" )
+var_imp_caret_c50_1_1$Not_Custom_Feature <- !(var_imp_caret_c50_1_1$variable_name %in% custom_features)
+ggplot(data = var_imp_caret_c50_1_1, aes(x = variable_name, y = Overall, fill = Not_Custom_Feature)) +
+  geom_bar(stat = 'identity') + guides(fill=FALSE) + coord_flip()
 # Prediction
 #
 prediction_caret_c50_1_final_model_1 <- predict(caret_c50_1_final_model_1, avocop_test_1)
-(confMat_caret_c50_1 <- confusionMatrix(table(prediction_caret_c50_1_final_model_1, avocop_test_y_1))) # (0.9262, 0.9624)
+(confMat_caret_c50_1 <- confusionMatrix(table(prediction_caret_c50_1_final_model_1, avocop_test_y_1))) # 95% CI : (0.9262, 0.9624)
 # C5.0 + cost matrix
 #
 cost_matrix_c50 <- matrix(c(0,3,10,3,0,3,10,3,0), ncol = 3, byrow = T) # arbitrary
@@ -69,3 +76,4 @@ c50_cost_sensitive_1 <- C5.0(x = avocop_train_1[,-69], y = avocop_train_1[,69], 
 #
 predict_c50_cost_sensitive_1 <- predict(c50_cost_sensitive_1, avocop_test_1)
 (confMat_c50_cost_sensitive_1 <- confusionMatrix(table(predict_c50_cost_sensitive_1, avocop_test_y_1))) # cost ineffective !! # same as above !
+# Consider model without cost_matrix
